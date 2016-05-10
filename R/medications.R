@@ -101,13 +101,14 @@ curateParticipantsATC <- function() {
 
 do <- function() {
   
-  genotypes <- getGenotypes('metabolic disease', 20)
   participants <- getParticipants()
   drugs <- getParticipantsATC(participants, 5)
   
+  genotypes <- getGenotypes('metabolic disease', 20)
   genotypes <- getGenotypes('t1dm', 10, c('missense_variant'))
   genotypes <- getGenotypes('t2dm', 10, c('missense_variant'))
   genotypes <- getGenotypes('cholesterol', 10, c('missense_variant'))
+  genotypes <- getGenotypes('hla', 20)
   
   participants <- getParticipants()
   drugs <- getParticipantsATC(participants, 3)

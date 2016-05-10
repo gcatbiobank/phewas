@@ -14,7 +14,7 @@ getParticipants <- function() {
 getDiseases <- function(participants) {
 
   gcat <- read.csv('data/phenotypes/data.csv', header=TRUE, stringsAsFactors = FALSE)
-  phenotypes_description <- read.csv('data/phen_description.csv', header=TRUE, stringsAsFactors = FALSE)
+  phenotypes_description <- read.csv('data/phenotypes/phen_description.csv', header=TRUE, stringsAsFactors = FALSE)
   phenotypes <- gcat[, append(c('entity_id'), phenotypes_description$phenotype)]
   phenotypes$entity_id <- gsub('=', '', phenotypes$entity_id)
   phenotypes <- cbind(phenotypes[1], apply(phenotypes[2:ncol(phenotypes)], 2, function(column) {
@@ -23,7 +23,7 @@ getDiseases <- function(participants) {
   
   write.csv(phenotypes, 'output/diseases.csv', row.names = FALSE)
 
-  names(phenotypes) <- append(c('entity_id'), phenotypes_description$icd9)
+  names(phenotypes) <- append(c('entity_id'), phenotypes_description$description)
   phenotypes <- merge(phenotypes, participants, by.x = 'entity_id', by.y = 'Sample.Id')
   phenotypes <- phenotypes[, !(colnames(phenotypes) %in% c('entity_id'))]
   names(phenotypes)[which(colnames(phenotypes) == 'Sample.name')] <- 'id'
@@ -31,7 +31,7 @@ getDiseases <- function(participants) {
 }
 
 getGenotypes <- function(outcome, threshold, types = NA) {
-  associations <- read.csv(sprintf('data/gwas-association-%s.tsv', outcome), header = TRUE, sep = '\t', stringsAsFactors = FALSE)
+  associations <- read.csv(sprintf('data/gwas/gwas-association-%s.tsv', outcome), header = TRUE, sep = '\t', stringsAsFactors = FALSE)
   associations <- associations[which(associations$PVALUE_MLOG > threshold),]
   if (!is.na(types)) {
     associations <- subset(associations, associations$CONTEXT %in% types)
@@ -45,10 +45,16 @@ getGenotypes <- function(outcome, threshold, types = NA) {
 
 do <- function() {
 
-  genotypes <- getGenotypes('hypertension', 10, c('missense_variants'))
+  genotypes <- getGenotypes('metabolic disease', 20)
+  genotypes <- getGenotypes('t1dm', 10, c('missense_variant'))
+  genotypes <- getGenotypes('t2dm', 10, c('missense_variant'))
+  genotypes <- getGenotypes('cholesterol', 10, c('missense_variant'))
+  genotypes <- getGenotypes('hla', 20)
+  
   participants <- getParticipants()
-  diseases <- getDiseases(participants) 
+  diseases <- getDiseases(participants)
   
   result <- phewas(phenotypes = diseases, genotypes = genotypes, cores=1, significance.threshold=c("bonferroni"))
   phewasManhattan(result, annotate.angle=0, title="My Example PheWAS Manhattan Plot", annotate.phenotype = TRUE, annotate.snp = TRUE)
+  write.csv(result, 'output/result.csv')
 }
